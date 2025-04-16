@@ -2,6 +2,11 @@ CREATE DATABASE preciosos_lacos;
 
 use preciosos_lacos;
 
+CREATE TABLE tipo_usuario(
+	id_tipoUsuario INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    tipo_usuario VARCHAR(45)
+);
+
 CREATE TABLE usuario (
  id_usuario INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
  nome_completo VARCHAR(100) NOT NULL,
@@ -9,9 +14,10 @@ CREATE TABLE usuario (
  senha CHAR(8) NOT NULL,
  cpf VARCHAR(14) NOT NULL UNIQUE,
  telefone VARCHAR(15) NOT NULL,
+ autenticado tinyint,
  data_cadastro DATE
  );
-
+ 
 CREATE TABLE endereco(
 	id_endereco INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     cep VARCHAR(14),
@@ -66,6 +72,6 @@ CREATE TABLE itens_pedido(
     CONSTRAINT produtoItens FOREIGN KEY(fkProduto) REFERENCES produto(id_produto)
 );
 
+select * from modelo;
 
-
-
+    
