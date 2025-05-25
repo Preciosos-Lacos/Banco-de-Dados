@@ -8,8 +8,6 @@ CREATE TABLE tipo_usuario (
     nome VARCHAR(50)
 );
 
-insert into tipo_usuario values (1, "ADM"), (2,"Cliente");
-
 -- Tabela de usuários
 CREATE TABLE usuario (
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -22,24 +20,6 @@ CREATE TABLE usuario (
     autenticado TINYINT,
     tipo_usuario_id INT DEFAULT 2,
     FOREIGN KEY (tipo_usuario_id) REFERENCES tipo_usuario(id)
-);
-
-INSERT INTO usuario (
-    nome,
-    email,
-    senha,
-    cpf,
-    telefone,
-    autenticado,
-    tipo_usuario_id
-) VALUES (
-    'Lucas Silva',
-    'lucas.silva@email.com',
-    'Abc12345',
-    '123.456.789-00',
-    '(11)91234-5678',
-    1,
-    1
 );
 
 -- Tabela de modelos (base dos produtos)
@@ -77,7 +57,7 @@ CREATE TABLE status_pedido (
 -- Tabela de pedidos
 CREATE TABLE pedido (
     id INT PRIMARY KEY auto_increment,
-    data DATE,
+    data_pedido DATETIME DEFAULT CURRENT_TIMESTAMP,
     total DOUBLE,
     forma_pagamento VARCHAR(45),
     usuario_id INT,
@@ -153,3 +133,4 @@ CREATE TABLE modelo_caracteristica (
     FOREIGN KEY (modelo_id) REFERENCES modelo(id),
     FOREIGN KEY (detalhe_id) REFERENCES caracteristica_detalhe(id)
 );
+
