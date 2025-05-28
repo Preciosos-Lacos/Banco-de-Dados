@@ -59,22 +59,24 @@ INSERT INTO pedido (total, forma_pagamento, usuario_id, status_pagamento_id, sta
 (110.00, 'Pix', 7, 2, 2),
 (80.00, 'Cartão de Crédito', 8, 2, 2),
 (60.00, 'Pix', 9, 2, 1),
-(95.00, 'Cartão de Crédito', 10, 2, 2);
-
-INSERT INTO pedido (total, forma_pagamento, usuario_id, status_pagamento_id, status_pedido_id) VALUES
-(200.00, 'Pix', 10, 2, 1);
-
-INSERT INTO pedido (total, forma_pagamento, usuario_id, status_pagamento_id, status_pedido_id) VALUES
+(95.00, 'Cartão de Crédito', 10, 2, 2),
+(200.00, 'Pix', 10, 2, 1),
 (140.00, 'Boleto', 8, 2, 1),
 (20.00, 'Boleto', 8, 2, 1),
 (50.00, 'Boleto', 1, 2, 1),
-(90.00, 'Boleto', 1, 2, 1);
-
-INSERT INTO pedido (total, forma_pagamento, usuario_id, status_pagamento_id, status_pedido_id) VALUES
+(90.00, 'Boleto', 1, 2, 1),
 (140.00, 'Pix', 2, 2, 1),
 (20.00, 'Pix', 2, 2, 1),
 (50.00, 'Cartão de Crédito', 3, 2, 1),
 (100.00, 'Cartão de Crédito', 3, 2, 1);
+
+INSERT INTO pedido (data_pedido, total, forma_pagamento, usuario_id, status_pagamento_id, status_pedido_id) VALUES
+(DATE_SUB(CURDATE(), INTERVAL 1 MONTH), 150.00, 'Pix', 2, 2, 2),
+(DATE_SUB(CURDATE(), INTERVAL 1 MONTH), 200.00, 'Cartão de Crédito', 3, 2, 2),
+(DATE_SUB(CURDATE(), INTERVAL 1 MONTH), 250.00, 'Pix', 4, 2, 2),
+(DATE_SUB(CURDATE(), INTERVAL 1 MONTH), 300.00, 'Cartão de Débito', 5, 2, 2);
+
+
 INSERT INTO item_pedido (pedido_id, produto_id, quantidade) VALUES
 (1, 1, 1),
 (1, 2, 1),
@@ -85,22 +87,21 @@ INSERT INTO item_pedido (pedido_id, produto_id, quantidade) VALUES
 (6, 7, 2),
 (7, 8, 1),
 (8, 9, 2),
-(9, 10, 1);
-
-INSERT INTO item_pedido (pedido_id, produto_id, quantidade) VALUES
-(11, 8, 2);
-
-INSERT INTO item_pedido (pedido_id, produto_id, quantidade) VALUES
+(9, 10, 1),
+(11, 8, 2),
 (12, 4, 1),
 (13, 4, 2),
 (14, 4, 3),
-(15, 5, 4);
-
-INSERT INTO item_pedido (pedido_id, produto_id, quantidade) VALUES
+(15, 5, 4),
 (16, 1, 1),
 (17, 1, 1),
 (18, 1, 1),
-(19, 1, 1);
+(19, 1, 1),
+(20, 1, 2),
+(21, 2, 1),
+(22, 3, 3),
+(23, 4, 1);
+
 
 INSERT INTO endereco (cep, logradouro, bairro, numero, complemento, cidade, estado, usuario_id) VALUES 
 ('12345-678', 'Rua das Flores', 'Jardim Primavera', 123, 'Apto 101', 'São Paulo', 'SP', 1),
@@ -125,24 +126,31 @@ INSERT INTO favorito (usuario_id, produto_id, marcado) VALUES
 (9, 9, 0),
 (10, 10, 1);
 
-INSERT INTO acabamento (nome, modelo_id) VALUES 
-('Brilho Especial', 1),
-('Acabamento Fosco', 2),
-('Costura Infantil', 3);
-
 INSERT INTO caracteristica (descricao) VALUES 
-('Material'), 
-('Fecho'), 
-('Categoria');
+('Cor'), 
+('Tamanho'), 
+('Acabamento'),
+('Tipo de laço');
 
 INSERT INTO caracteristica_detalhe (id, caracteristica_id, descricao) VALUES 
-(1, 1, 'Algodão'),
-(2, 1, 'Poliéster'),
-(3, 2, 'Velcro'),
-(4, 2, 'Botão'),
-(5, 3, 'Infantil'),
-(6, 3, 'Adulto');
+(1, 1, 'Azul'),
+(2, 1, 'Rosa'),
+(3, 1, 'Vermelho'),
+(4, 2, 'P'),
+(5, 2, 'M'),
+(7, 2, 'G'),
+(9, 3, 'Brilho'),
+(9, 3, 'Simples'),
+(10, 3, 'Pom Pom'),
+(8, 4, 'Bico de pato'),
+(9, 4, 'Xuxinha'),
+(9, 4, 'Meia de Seda');
 
+-- há uma inconsistencia dentro da tabela modelo_caracteristica pois não há como indicar que estamos utilizando mais de uma 
+-- caracteristica_detalhe na caracteristica do modelo, desta forma não tem um modelo completo.
+
+select * from modelo_caracteristica;
+describe modelo_caracteristica;
 INSERT INTO modelo_caracteristica (modelo_id, detalhe_id) VALUES 
 (1, 1),
 (1, 3),
@@ -151,19 +159,3 @@ INSERT INTO modelo_caracteristica (modelo_id, detalhe_id) VALUES
 (3, 1),
 (3, 5);
 
-
--- Inserindo pedidos pagos do mês anterior (ex: 1 mês atrás)
-INSERT INTO pedido (data_pedido, total, forma_pagamento, usuario_id, status_pagamento_id, status_pedido_id) VALUES
-(DATE_SUB(CURDATE(), INTERVAL 1 MONTH), 150.00, 'Pix', 2, 2, 2),
-(DATE_SUB(CURDATE(), INTERVAL 1 MONTH), 200.00, 'Cartão de Crédito', 3, 2, 2),
-(DATE_SUB(CURDATE(), INTERVAL 1 MONTH), 250.00, 'Pix', 4, 2, 2),
-(DATE_SUB(CURDATE(), INTERVAL 1 MONTH), 300.00, 'Cartão de Débito', 5, 2, 2);
-
--- Descubra os IDs gerados acima (exemplo: 20, 21, 22, 23)
--- e vincule produtos existentes
-select*from pedido;
-INSERT INTO item_pedido (pedido_id, produto_id, quantidade) VALUES
-(20, 1, 2),
-(21, 2, 1),
-(22, 3, 3),
-(23, 4, 1);

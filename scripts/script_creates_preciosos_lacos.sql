@@ -96,18 +96,9 @@ CREATE TABLE endereco (
 CREATE TABLE favorito (
     usuario_id INT,
     produto_id INT,
-    marcado VARCHAR(10),
     PRIMARY KEY (usuario_id, produto_id),
     FOREIGN KEY (usuario_id) REFERENCES usuario(id),
     FOREIGN KEY (produto_id) REFERENCES produto(id)
-);
-
--- Tipos de acabamento do modelo
-CREATE TABLE acabamento (
-    id INT PRIMARY KEY auto_increment,
-    nome VARCHAR(45),
-    modelo_id INT,
-    FOREIGN KEY (modelo_id) REFERENCES modelo(id)
 );
 
 -- Características gerais (ex: material, tipo de fecho)
@@ -128,6 +119,8 @@ CREATE TABLE caracteristica_detalhe (
 -- Relaciona um modelo com seus detalhes de características
 CREATE TABLE modelo_caracteristica (
     modelo_id INT,
+    nome VARCHAR(56),
+    valor INT,
     detalhe_id INT,
     PRIMARY KEY (modelo_id, detalhe_id),
     FOREIGN KEY (modelo_id) REFERENCES modelo(id),

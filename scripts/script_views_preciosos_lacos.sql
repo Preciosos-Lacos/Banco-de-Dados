@@ -1,142 +1,108 @@
--- Top 5 laços mais vendidos
-CREATE OR REPLACE VIEW kpi_top5_lacos AS
-SELECT 
-    m.nome AS modelo,
-    COUNT(*) AS quantidade_vendida
-FROM 
-    item_pedido ip
-JOIN produto p ON ip.produto_id = p.id
-JOIN modelo m ON p.modelo_id = m.id
-GROUP BY m.nome
-ORDER BY quantidade_vendida DESC
-LIMIT 5;
+-- View: Total de Vendas (Atual vs. Anterior)
+CREATE OR REPLACE VIEW kpi_comparativo_total_vendas AS
+SELECT
+    COALESCE(SUM(CASE 
+        WHEN MONTH(data_pedido) = MONTH(CURRENT_DATE()) 
+         AND YEAR(data_pedido) = YEAR(CURRENT_DATE()) 
+        THEN total 
+    END), 0) AS total_atual,
+    COALESCE(SUM(CASE 
+        WHEN MONTH(data_pedido) = MONTH(CURRENT_DATE() - INTERVAL 1 MONTH) 
+         AND YEAR(data_pedido) = YEAR(CURRENT_DATE() - INTERVAL 1 MONTH) 
+        THEN total 
+    END), 0) AS total_anterior
+FROM pedido;
 
--- Clientes que compraram mais de uma vez
-CREATE OR REPLACE VIEW kpi_clientes_fieis AS
-SELECT 
-    u.id AS usuario_id,
-    u.nome,
-    COUNT(DISTINCT p.id) AS vezes_comprou
-FROM 
-    pedido p
-JOIN usuario u ON p.usuario_id = u.id
-GROUP BY u.id, u.nome
-HAVING vezes_comprou > 1;
+-- View: Clientes Novos (Atual vs. Anterior)
+CREATE OR REPLACE VIEW kpi_comparativo_clientes_novos AS
+SELECT
+    COALESCE(COUNT(CASE 
+        WHEN MONTH(data_cadastro) = MONTH(CURRENT_DATE()) 
+         AND YEAR(data_cadastro) = YEAR(CURRENT_DATE()) 
+        THEN id 
+    END), 0) AS novos_atual,
+    COALESCE(COUNT(CASE 
+        WHEN MONTH(data_cadastro) = MONTH(CURRENT_DATE() - INTERVAL 1 MONTH) 
+         AND YEAR(data_cadastro) = YEAR(CURRENT_DATE() - INTERVAL 1 MONTH) 
+        THEN id 
+    END), 0) AS novos_anterior
+FROM usuario;
 
--- Clientes novos neste mês
-CREATE OR REPLACE VIEW kpi_clientes_novos AS
-SELECT 
-    COUNT(*) AS total_clientes_novos
-FROM 
-    usuario
-WHERE 
-    MONTH(data_cadastro) = MONTH(CURRENT_DATE()) AND
-    YEAR(data_cadastro) = YEAR(CURRENT_DATE());
+-- View: Clientes com Recompra (Atual vs. Anterior)
+CREATE OR REPLACE VIEW kpi_comparativo_clientes_recompra AS
+SELECT
+    COALESCE(COUNT(DISTINCT CASE
+        WHEN MONTH(p.data_pedido) = MONTH(CURRENT_DATE()) 
+         AND YEAR(p.data_pedido) = YEAR(CURRENT_DATE()) 
+         AND u.qtd_pedidos > 1 
+        THEN p.usuario_id
+    END), 0) AS recompra_atual,
+    COALESCE(COUNT(DISTINCT CASE
+        WHEN MONTH(p.data_pedido) = MONTH(CURRENT_DATE() - INTERVAL 1 MONTH) 
+         AND YEAR(p.data_pedido) = YEAR(CURRENT_DATE() - INTERVAL 1 MONTH) 
+         AND u.qtd_pedidos > 1 
+        THEN p.usuario_id
+    END), 0) AS recompra_anterior
+FROM pedido p
+JOIN (
+    SELECT usuario_id, COUNT(*) AS qtd_pedidos
+    FROM pedido
+    GROUP BY usuario_id
+) u ON p.usuario_id = u.usuario_id;
 
--- Forma de pagamento mais usada
+-- View: Forma de Pagamento Mais Usada (Somente mês atual)
 CREATE OR REPLACE VIEW kpi_forma_pagamento_popular AS
 SELECT 
     forma_pagamento,
     COUNT(*) AS quantidade
-FROM 
-    pedido
+FROM pedido
+WHERE MONTH(data_pedido) = MONTH(CURRENT_DATE())
+  AND YEAR(data_pedido) = YEAR(CURRENT_DATE())
 GROUP BY forma_pagamento
 ORDER BY quantidade DESC
 LIMIT 1;
 
--- Total vendido (pedidos pagos)
-CREATE OR REPLACE VIEW kpi_total_vendas AS
-SELECT 
-    IFNULL(SUM(total), 0) AS total_vendido
-FROM 
-    pedido
-WHERE 
-    status_pagamento_id = (SELECT id FROM status_pagamento WHERE nome = 'Pago');
-
--- Total vendido no mês atual
-CREATE OR REPLACE VIEW kpi_total_vendas_mes_atual AS
-SELECT 
-    IFNULL(SUM(total), 0) AS total_vendido_mes
-FROM 
-    pedido
-WHERE 
-    MONTH(data_pedido) = MONTH(CURRENT_DATE())
-  AND YEAR(data_pedido) = YEAR(CURRENT_DATE())
-  AND status_pagamento_id = (SELECT id FROM status_pagamento WHERE nome = 'Pago');
-
-
-CREATE OR REPLACE VIEW kpi_comparativo_total_vendas AS
+-- View: Top 3 Formas de Pagamento com Comparativo Mensal
+CREATE OR REPLACE VIEW kpi_top3_forma_pagamento_comparativo AS
 SELECT
-  COALESCE(SUM(CASE 
-    WHEN MONTH(data_pedido) = MONTH(CURDATE()) 
-     AND YEAR(data_pedido) = YEAR(CURDATE()) 
-    THEN total END), 0) AS total_atual,
-  
-  COALESCE(SUM(CASE 
-    WHEN MONTH(data_pedido) = MONTH(CURDATE() - INTERVAL 1 MONTH) 
-     AND YEAR(data_pedido) = YEAR(CURDATE() - INTERVAL 1 MONTH) 
-    THEN total END), 0) AS total_anterior
-FROM pedido;
-
-select * from kpi_comparativo_total_vendas;
-
-CREATE OR REPLACE VIEW kpi_comparativo_total_vendas AS
-SELECT
-  COALESCE(SUM(CASE 
-    WHEN MONTH(data_pedido) = MONTH(CURDATE()) AND YEAR(data_pedido) = YEAR(CURDATE())
-    THEN total END), 0) AS total_atual,
-
-  COALESCE(SUM(CASE 
-    WHEN MONTH(data_pedido) = MONTH(CURDATE() - INTERVAL 1 MONTH) AND YEAR(data_pedido) = YEAR(CURDATE() - INTERVAL 1 MONTH)
-    THEN total END), 0) AS total_anterior
-FROM pedido
-WHERE status_pagamento_id = (SELECT id FROM status_pagamento WHERE nome = 'Pago');
-
-CREATE OR REPLACE VIEW kpi_comparativo_clientes_novos AS
-SELECT
-  COALESCE(SUM(CASE 
-    WHEN MONTH(data_cadastro) = MONTH(CURDATE()) AND YEAR(data_cadastro) = YEAR(CURDATE())
-    THEN 1 END), 0) AS novos_atual,
-
-  COALESCE(SUM(CASE 
-    WHEN MONTH(data_cadastro) = MONTH(CURDATE() - INTERVAL 1 MONTH) AND YEAR(data_cadastro) = YEAR(CURDATE() - INTERVAL 1 MONTH)
-    THEN 1 END), 0) AS novos_anterior
-FROM usuario;
-
-CREATE OR REPLACE VIEW kpi_comparativo_clientes_recompra AS
-SELECT
+  atual.forma_pagamento,
+  atual.total AS qtd_atual,
+  COALESCE(anterior.total, 0) AS qtd_anterior,
+  CASE
+    WHEN COALESCE(anterior.total, 0) = 0 THEN 100
+    ELSE ROUND(((atual.total - anterior.total) / anterior.total) * 100, 2)
+  END AS crescimento_percentual
+FROM
   (
-    SELECT COUNT(*) FROM (
-      SELECT usuario_id FROM pedido
-      WHERE MONTH(data_pedido) = MONTH(CURDATE()) AND YEAR(data_pedido) = YEAR(CURDATE())
-      GROUP BY usuario_id
-      HAVING COUNT(*) > 1
-    ) AS sub_atual
-  ) AS recompra_atual,
-
+    SELECT forma_pagamento, COUNT(*) AS total
+    FROM pedido
+    WHERE MONTH(data_pedido) = MONTH(CURRENT_DATE())
+      AND YEAR(data_pedido) = YEAR(CURRENT_DATE())
+    GROUP BY forma_pagamento
+    ORDER BY total DESC
+    LIMIT 3
+  ) AS atual
+LEFT JOIN
   (
-    SELECT COUNT(*) FROM (
-      SELECT usuario_id FROM pedido
-      WHERE MONTH(data_pedido) = MONTH(CURDATE() - INTERVAL 1 MONTH)
-        AND YEAR(data_pedido) = YEAR(CURDATE() - INTERVAL 1 MONTH)
-      GROUP BY usuario_id
-      HAVING COUNT(*) > 1
-    ) AS sub_anterior
-  ) AS recompra_anterior;
+    SELECT forma_pagamento, COUNT(*) AS total
+    FROM pedido
+    WHERE MONTH(data_pedido) = MONTH(CURRENT_DATE() - INTERVAL 1 MONTH)
+      AND YEAR(data_pedido) = YEAR(CURRENT_DATE() - INTERVAL 1 MONTH)
+    GROUP BY forma_pagamento
+  ) AS anterior ON atual.forma_pagamento = anterior.forma_pagamento;
 
-CREATE OR REPLACE VIEW kpi_comparativo_forma_pagamento AS
+-- View: Top 5 Laços Mais Vendidos (Somente mês atual)
+CREATE OR REPLACE VIEW kpi_top5_lacos_comparativo AS
 SELECT
-  (SELECT forma_pagamento
-   FROM pedido
-   WHERE MONTH(data_pedido) = MONTH(CURDATE()) AND YEAR(data_pedido) = YEAR(CURDATE())
-   GROUP BY forma_pagamento
-   ORDER BY COUNT(*) DESC
-   LIMIT 1) AS mais_usado_atual,
-
-  (SELECT forma_pagamento
-   FROM pedido
-   WHERE MONTH(data_pedido) = MONTH(CURDATE() - INTERVAL 1 MONTH)
-     AND YEAR(data_pedido) = YEAR(CURDATE() - INTERVAL 1 MONTH)
-   GROUP BY forma_pagamento
-   ORDER BY COUNT(*) DESC
-   LIMIT 1) AS mais_usado_anterior;
+  m.id AS modelo_id,
+  m.nome AS modelo,
+  COALESCE(SUM(ip.quantidade), 0) AS quantidade_atual
+FROM modelo m
+LEFT JOIN produto p ON p.modelo_id = m.id
+LEFT JOIN item_pedido ip ON ip.produto_id = p.id
+LEFT JOIN pedido ped ON ped.id = ip.pedido_id
+WHERE MONTH(ped.data_pedido) = MONTH(CURRENT_DATE())
+  AND YEAR(ped.data_pedido) = YEAR(CURRENT_DATE())
+GROUP BY m.id, m.nome
+ORDER BY quantidade_atual DESC
+LIMIT 5;
