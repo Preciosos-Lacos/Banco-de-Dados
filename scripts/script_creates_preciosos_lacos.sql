@@ -126,4 +126,3 @@ CREATE TABLE modelo_caracteristica (
     FOREIGN KEY (modelo_id) REFERENCES modelo(id),
     FOREIGN KEY (detalhe_id) REFERENCES caracteristica_detalhe(id)
 );
-

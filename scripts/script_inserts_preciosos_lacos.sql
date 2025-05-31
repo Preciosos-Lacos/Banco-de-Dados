@@ -102,6 +102,7 @@ INSERT INTO item_pedido (pedido_id, produto_id, quantidade) VALUES
 (22, 3, 3),
 (23, 4, 1);
 
+select id from pedido order by id desc;
 
 INSERT INTO endereco (cep, logradouro, bairro, numero, complemento, cidade, estado, usuario_id) VALUES 
 ('12345-678', 'Rua das Flores', 'Jardim Primavera', 123, 'Apto 101', 'São Paulo', 'SP', 1),
