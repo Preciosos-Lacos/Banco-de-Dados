@@ -9,7 +9,7 @@ CREATE TABLE tipo_usuario (
 );
 
 -- Tabela de usuários
-CREATE TABLE usuario (
+CREATE TABLE IF NOT EXISTS usuario (
     id INT PRIMARY KEY AUTO_INCREMENT,
     nome VARCHAR(100),
     email VARCHAR(100),
@@ -23,7 +23,7 @@ CREATE TABLE usuario (
 );
 
 -- Tabela de modelos (base dos produtos)
-CREATE TABLE modelo (
+CREATE TABLE IF NOT EXISTS modelo (
     id INT PRIMARY KEY auto_increment,
     nome VARCHAR(100),
     preco DOUBLE,
@@ -32,7 +32,7 @@ CREATE TABLE modelo (
 );
 
 -- Tabela de produtos
-CREATE TABLE produto (
+CREATE TABLE IF NOT EXISTS produto (
     id INT PRIMARY KEY auto_increment,
     tamanho VARCHAR(5),
     cor VARCHAR(45),
@@ -43,19 +43,19 @@ CREATE TABLE produto (
 );
 
 -- Tabela de status de pagamento (ex: pago, pendente)
-CREATE TABLE status_pagamento (
+CREATE TABLE IF NOT EXISTS status_pagamento (
     id INT PRIMARY KEY auto_increment,
     nome VARCHAR(45)
 );
 
 -- Tabela de status de pedido (ex: em andamento, entregue)
-CREATE TABLE status_pedido (
+CREATE TABLE IF NOT EXISTS status_pedido (
     id INT PRIMARY KEY auto_increment,
     nome VARCHAR(45)
 );
 
 -- Tabela de pedidos
-CREATE TABLE pedido (
+CREATE TABLE IF NOT EXISTS pedido (
     id INT PRIMARY KEY auto_increment,
     data_pedido DATETIME DEFAULT CURRENT_TIMESTAMP,
     total DOUBLE,
@@ -69,7 +69,7 @@ CREATE TABLE pedido (
 );
 
 -- Itens dentro do pedido
-CREATE TABLE item_pedido (
+CREATE TABLE IF NOT EXISTS item_pedido (
     pedido_id INT,
     produto_id INT,
     quantidade INT,
@@ -79,7 +79,7 @@ CREATE TABLE item_pedido (
 );
 
 -- Endereço do usuário
-CREATE TABLE endereco (
+CREATE TABLE IF NOT EXISTS endereco (
     id INT PRIMARY KEY auto_increment,
     cep VARCHAR(14),
     logradouro VARCHAR(45),
@@ -93,7 +93,7 @@ CREATE TABLE endereco (
 );
 
 -- Produtos favoritos dos usuários
-CREATE TABLE favorito (
+CREATE TABLE IF NOT EXISTS favorito (
     usuario_id INT,
     produto_id INT,
     PRIMARY KEY (usuario_id, produto_id),
@@ -102,13 +102,13 @@ CREATE TABLE favorito (
 );
 
 -- Características gerais (ex: material, tipo de fecho)
-CREATE TABLE caracteristica (
+CREATE TABLE IF NOT EXISTS caracteristica (
     id INT PRIMARY KEY auto_increment,
     descricao VARCHAR(45)
 );
 
 -- Detalhes das características (ex: algodão, inox)
-CREATE TABLE caracteristica_detalhe (
+CREATE TABLE IF NOT EXISTS caracteristica_detalhe (
     id INT,
     caracteristica_id INT,
     descricao VARCHAR(45),
@@ -117,7 +117,7 @@ CREATE TABLE caracteristica_detalhe (
 );
 
 -- Relaciona um modelo com seus detalhes de características
-CREATE TABLE modelo_caracteristica (
+CREATE TABLE IF NOT EXISTS modelo_caracteristica (
     modelo_id INT,
     nome VARCHAR(56),
     valor INT,
