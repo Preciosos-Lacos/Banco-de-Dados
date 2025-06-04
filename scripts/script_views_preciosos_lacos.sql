@@ -1,32 +1,31 @@
--- View: Total de Vendas (Atual vs. Anterior)
-CREATE OR REPLACE VIEW kpi_comparativo_total_vendas AS
+-- View para total de vendas semanal no último mês
+CREATE OR REPLACE VIEW kpi_vendas_semanal AS
 SELECT
-    COALESCE(SUM(CASE 
-        WHEN MONTH(data_pedido) = MONTH(CURRENT_DATE()) 
-         AND YEAR(data_pedido) = YEAR(CURRENT_DATE()) 
-        THEN total 
-    END), 0) AS total_atual,
-    COALESCE(SUM(CASE 
-        WHEN MONTH(data_pedido) = MONTH(CURRENT_DATE() - INTERVAL 1 MONTH) 
-         AND YEAR(data_pedido) = YEAR(CURRENT_DATE() - INTERVAL 1 MONTH) 
-        THEN total 
-    END), 0) AS total_anterior
-FROM pedido;
+    YEARWEEK(p.data_pedido, 1) as ano_semana, -- 1 makes week start on Monday
+    CONCAT(
+        DATE_FORMAT(DATE_SUB(STR_TO_DATE(CONCAT(YEARWEEK(p.data_pedido, 1), ' Monday'), '%X%V %W'), INTERVAL WEEKDAY(STR_TO_DATE(CONCAT(YEARWEEK(p.data_pedido, 1), ' Monday'), '%X%V %W')) DAY), '%d/%m'),
+        ' - ',
+        DATE_FORMAT(DATE_ADD(DATE_SUB(STR_TO_DATE(CONCAT(YEARWEEK(p.data_pedido, 1), ' Monday'), '%X%V %W'), INTERVAL WEEKDAY(STR_TO_DATE(CONCAT(YEARWEEK(p.data_pedido, 1), ' Monday'), '%X%V %W')) DAY), INTERVAL 6 DAY), '%d/%m')
+    ) AS periodo_semana,
+    SUM(pp.quantidade * pr.preco_final) AS total_vendas
+FROM pedido p
+JOIN item_pedido pp ON p.id = pp.pedido_id
+JOIN produto pr ON pp.produto_id = pr.id
+WHERE p.data_pedido >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH)
+GROUP BY ano_semana
+ORDER BY ano_semana ASC;
 
--- View: Clientes Novos (Atual vs. Anterior)
-CREATE OR REPLACE VIEW kpi_comparativo_clientes_novos AS
+-- View para novos clientes por semestre
+CREATE OR REPLACE VIEW kpi_clientes_novos_semestral AS
 SELECT
-    COALESCE(COUNT(CASE 
-        WHEN MONTH(data_cadastro) = MONTH(CURRENT_DATE()) 
-         AND YEAR(data_cadastro) = YEAR(CURRENT_DATE()) 
-        THEN id 
-    END), 0) AS novos_atual,
-    COALESCE(COUNT(CASE 
-        WHEN MONTH(data_cadastro) = MONTH(CURRENT_DATE() - INTERVAL 1 MONTH) 
-         AND YEAR(data_cadastro) = YEAR(CURRENT_DATE() - INTERVAL 1 MONTH) 
-        THEN id 
-    END), 0) AS novos_anterior
-FROM usuario;
+    YEAR(data_cadastro) as ano,
+    CEIL(MONTH(data_cadastro) / 6) as semestre, -- 1 for Jan-Jun, 2 for Jul-Dec
+    COUNT(id) AS novos_clientes
+FROM usuario
+GROUP BY ano, semestre
+ORDER BY ano ASC, semestre ASC;
+
+select*from kpi_clientes_novos_semestral ;
 
 -- View: Clientes com Recompra (Atual vs. Anterior)
 CREATE OR REPLACE VIEW kpi_comparativo_clientes_recompra AS
