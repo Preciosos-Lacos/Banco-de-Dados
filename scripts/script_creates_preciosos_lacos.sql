@@ -3,7 +3,7 @@ CREATE DATABASE IF NOT EXISTS preciosos_lacos;
 USE preciosos_lacos;
 
 -- Tabela de tipos de usuário (ex: administrador, cliente)
-CREATE TABLE tipo_usuario (
+CREATE TABLE IF NOT EXISTS tipo_usuario (
     id INT PRIMARY KEY,
     nome VARCHAR(50)
 );

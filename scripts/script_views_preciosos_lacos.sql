@@ -1,107 +1,81 @@
--- View para total de vendas semanal no último mês
-CREATE OR REPLACE VIEW kpi_vendas_semanal AS
-SELECT
-    YEARWEEK(p.data_pedido, 1) as ano_semana, -- 1 makes week start on Monday
-    CONCAT(
-        DATE_FORMAT(DATE_SUB(STR_TO_DATE(CONCAT(YEARWEEK(p.data_pedido, 1), ' Monday'), '%X%V %W'), INTERVAL WEEKDAY(STR_TO_DATE(CONCAT(YEARWEEK(p.data_pedido, 1), ' Monday'), '%X%V %W')) DAY), '%d/%m'),
-        ' - ',
-        DATE_FORMAT(DATE_ADD(DATE_SUB(STR_TO_DATE(CONCAT(YEARWEEK(p.data_pedido, 1), ' Monday'), '%X%V %W'), INTERVAL WEEKDAY(STR_TO_DATE(CONCAT(YEARWEEK(p.data_pedido, 1), ' Monday'), '%X%V %W')) DAY), INTERVAL 6 DAY), '%d/%m')
-    ) AS periodo_semana,
-    SUM(pp.quantidade * pr.preco_final) AS total_vendas
-FROM pedido p
-JOIN item_pedido pp ON p.id = pp.pedido_id
-JOIN produto pr ON pp.produto_id = pr.id
-WHERE p.data_pedido >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH)
-GROUP BY ano_semana
-ORDER BY ano_semana ASC;
+CREATE OR REPLACE VIEW vw_top5_lacos_mais_vendidos AS
+SELECT mo.nome AS modelo_nome, SUM(ip.quantidade) AS total_vendido
+FROM item_pedido ip
+JOIN produto p ON ip.produto_id = p.id
+JOIN modelo mo ON p.modelo_id = mo.id
+JOIN pedido pe ON ip.pedido_id = pe.id
+WHERE pe.data_pedido >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+GROUP BY mo.nome
+ORDER BY total_vendido DESC
+LIMIT 5;
 
--- View para novos clientes por semestre
-CREATE OR REPLACE VIEW kpi_clientes_novos_semestral AS
-SELECT
-    YEAR(data_cadastro) as ano,
-    CEIL(MONTH(data_cadastro) / 6) as semestre, -- 1 for Jan-Jun, 2 for Jul-Dec
-    COUNT(id) AS novos_clientes
-FROM usuario
-GROUP BY ano, semestre
-ORDER BY ano ASC, semestre ASC;
+SELECT * FROM vw_top5_lacos_mais_vendidos;
 
-select*from kpi_clientes_novos_semestral ;
 
--- View: Clientes com Recompra (Atual vs. Anterior)
-CREATE OR REPLACE VIEW kpi_comparativo_clientes_recompra AS
-SELECT
-    COALESCE(COUNT(DISTINCT CASE
-        WHEN MONTH(p.data_pedido) = MONTH(CURRENT_DATE()) 
-         AND YEAR(p.data_pedido) = YEAR(CURRENT_DATE()) 
-         AND u.qtd_pedidos > 1 
-        THEN p.usuario_id
-    END), 0) AS recompra_atual,
-    COALESCE(COUNT(DISTINCT CASE
-        WHEN MONTH(p.data_pedido) = MONTH(CURRENT_DATE() - INTERVAL 1 MONTH) 
-         AND YEAR(p.data_pedido) = YEAR(CURRENT_DATE() - INTERVAL 1 MONTH) 
-         AND u.qtd_pedidos > 1 
-        THEN p.usuario_id
-    END), 0) AS recompra_anterior
+CREATE OR REPLACE VIEW vw_total_vendas_6_meses AS
+SELECT DATE_FORMAT(pe.data_pedido, '%Y-%m') AS mes_ano,
+       SUM(pe.total) AS total_vendas
+FROM pedido pe
+WHERE pe.data_pedido >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+GROUP BY mes_ano
+ORDER BY mes_ano;
+
+SELECT * FROM vw_total_vendas_6_meses;
+
+
+CREATE OR REPLACE VIEW vw_novos_clientes_6_meses AS
+SELECT DATE_FORMAT(p.data_pedido, '%Y-%m') AS mes_ano,
+       COUNT(DISTINCT p.usuario_id) AS novos_clientes
 FROM pedido p
 JOIN (
-    SELECT usuario_id, COUNT(*) AS qtd_pedidos
-    FROM pedido
-    GROUP BY usuario_id
-) u ON p.usuario_id = u.usuario_id;
+  SELECT usuario_id, MIN(data_pedido) AS primeiro_pedido
+  FROM pedido
+  GROUP BY usuario_id
+) primeiro ON p.usuario_id = primeiro.usuario_id AND p.data_pedido = primeiro.primeiro_pedido
+WHERE p.data_pedido >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+GROUP BY mes_ano
+ORDER BY mes_ano;
 
--- View: Forma de Pagamento Mais Usada (Somente mês atual)
-CREATE OR REPLACE VIEW kpi_forma_pagamento_popular AS
-SELECT 
-    forma_pagamento,
-    COUNT(*) AS quantidade
-FROM pedido
-WHERE MONTH(data_pedido) = MONTH(CURRENT_DATE())
-  AND YEAR(data_pedido) = YEAR(CURRENT_DATE())
-GROUP BY forma_pagamento
-ORDER BY quantidade DESC
-LIMIT 1;
+SELECT * FROM vw_novos_clientes_6_meses;
 
--- View: Top 3 Formas de Pagamento com Comparativo Mensal
-CREATE OR REPLACE VIEW kpi_top3_forma_pagamento_comparativo AS
-SELECT
-  atual.forma_pagamento,
-  atual.total AS qtd_atual,
-  COALESCE(anterior.total, 0) AS qtd_anterior,
-  CASE
-    WHEN COALESCE(anterior.total, 0) = 0 THEN 100
-    ELSE ROUND(((atual.total - anterior.total) / anterior.total) * 100, 2)
-  END AS crescimento_percentual
-FROM
-  (
-    SELECT forma_pagamento, COUNT(*) AS total
-    FROM pedido
-    WHERE MONTH(data_pedido) = MONTH(CURRENT_DATE())
-      AND YEAR(data_pedido) = YEAR(CURRENT_DATE())
-    GROUP BY forma_pagamento
-    ORDER BY total DESC
-    LIMIT 3
-  ) AS atual
-LEFT JOIN
-  (
-    SELECT forma_pagamento, COUNT(*) AS total
-    FROM pedido
-    WHERE MONTH(data_pedido) = MONTH(CURRENT_DATE() - INTERVAL 1 MONTH)
-      AND YEAR(data_pedido) = YEAR(CURRENT_DATE() - INTERVAL 1 MONTH)
-    GROUP BY forma_pagamento
-  ) AS anterior ON atual.forma_pagamento = anterior.forma_pagamento;
 
--- View: Top 5 Laços Mais Vendidos (Somente mês atual)
-CREATE OR REPLACE VIEW kpi_top5_lacos_comparativo AS
-SELECT
-  m.id AS modelo_id,
-  m.nome AS modelo,
-  COALESCE(SUM(ip.quantidade), 0) AS quantidade_atual
-FROM modelo m
-LEFT JOIN produto p ON p.modelo_id = m.id
-LEFT JOIN item_pedido ip ON ip.produto_id = p.id
-LEFT JOIN pedido ped ON ped.id = ip.pedido_id
-WHERE MONTH(ped.data_pedido) = MONTH(CURRENT_DATE())
-  AND YEAR(ped.data_pedido) = YEAR(CURRENT_DATE())
-GROUP BY m.id, m.nome
-ORDER BY quantidade_atual DESC
-LIMIT 5;
+CREATE OR REPLACE VIEW vw_clientes_recompra_6_meses AS
+SELECT DATE_FORMAT(p.data_pedido, '%Y-%m') AS mes_ano,
+       COUNT(DISTINCT p.usuario_id) AS clientes_recompraram
+FROM pedido p
+JOIN (
+  SELECT usuario_id, COUNT(*) AS total_compras
+  FROM pedido
+  WHERE data_pedido >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+  GROUP BY usuario_id
+  HAVING total_compras > 1
+) clientes ON p.usuario_id = clientes.usuario_id
+WHERE p.data_pedido >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+GROUP BY mes_ano
+ORDER BY mes_ano;
+
+SELECT * FROM vw_clientes_recompra_6_meses;
+
+CREATE OR REPLACE VIEW vw_formas_pagamento_6_meses AS
+SELECT DATE_FORMAT(pe.data_pedido, '%Y-%m') AS mes_ano,
+       pe.forma_pagamento,
+       COUNT(*) AS total_forma
+FROM pedido pe
+WHERE pe.data_pedido >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+GROUP BY mes_ano, pe.forma_pagamento
+ORDER BY mes_ano;
+
+SELECT * FROM vw_formas_pagamento_6_meses;
+
+
+CREATE OR REPLACE VIEW vw_total_pedidos_6_meses AS
+SELECT DATE_FORMAT(pe.data_pedido, '%Y-%m') AS mes_ano,
+       sp.nome AS status_nome,
+       COUNT(*) AS total_pedidos
+FROM pedido pe
+JOIN status_pedido sp ON pe.status_pedido_id = sp.id
+WHERE pe.data_pedido >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+GROUP BY mes_ano, sp.nome
+ORDER BY mes_ano;
+
+SELECT * FROM vw_total_pedidos_6_meses;
