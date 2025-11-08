@@ -11,7 +11,8 @@ INSERT INTO status_pagamento (status) VALUES
 INSERT INTO status_pedido (status) VALUES
 ('Em andamento'),
 ('Entregue'),
-('Cancelado');
+('Cancelado'),
+('Concluido');
 
 INSERT INTO tipo_usuario (id_tipo_usuario, tipo_usuario) VALUES
 (1, 'ADM'),
@@ -92,8 +93,8 @@ INSERT INTO favorito_modelo (id_modelo, id_usuario) VALUES
 -- TABELA: pedido
 -- -----------------------------
 INSERT INTO pedido (data_pedido, forma_pagamento, total, status_pagamento_id_status_pagamento, status_pedido_id_status_pedido, usuario_id_usuario) VALUES
-('2025-10-20', 1, 19.90, 2, 1, 2), -- Pedido João (Pago, Em andamento)
-('2025-10-22', 2, 34.90, 1, 1, 3); -- Pedido Maria (Pendente, Em andamento)
+('2025-11-08', 1, 19.90, 2, 1, 2), -- Pedido João (Pago, Em andamento)
+('2025-11-08', 2, 304.90, 1, 1, 3); -- Pedido Maria (Pendente, Em andamento)
 
 -- -----------------------------
 -- TABELA: pedido_produto
@@ -106,11 +107,11 @@ INSERT INTO pedido_produto (id_pedido, id_produto) VALUES
 -- NOVOS PEDIDOS
 -- -----------------------------
 INSERT INTO pedido (data_pedido, forma_pagamento, total, status_pagamento_id_status_pagamento, status_pedido_id_status_pedido, usuario_id_usuario) VALUES
-('2025-10-25', 1, 49.80, 2, 2, 2),  -- João: Pedido entregue (2x Laço Simples)
-('2025-10-26', 2, 29.90, 1, 1, 3),  -- Maria: Pedido pendente (Laço Glamour Azul)
+('2025-11-07', 1, 49.80, 2, 2, 2),  -- João: Pedido entregue (2x Laço Simples)
+('2025-10-31', 2, 29.90, 1, 1, 3),  -- Maria: Pedido pendente (Laço Glamour Azul)
 ('2025-10-27', 3, 54.80, 2, 1, 3),  -- Maria: Pago e em andamento (2 Laços Elegance)
 ('2025-10-28', 1, 34.90, 3, 3, 2),  -- João: Pedido cancelado
-('2025-10-23', 2, 64.80, 2, 2, 3);  -- Maria: Entregue com Laço Glamour + Elegance
+('2025-10-29', 2, 64.80, 2, 2, 3);  -- Maria: Entregue com Laço Glamour + Elegance
 
 -- -----------------------------
 -- RELACIONAMENTO PEDIDO_PRODUTO
